@@ -30,8 +30,10 @@ impl BitVec {
             self.data.push(0);
         }
 
-        if let Some(last) = self.data.last_mut() {
-            *last |= (0x80 * bit as u8) >> (self.size % 8);
+        if bit {
+            if let Some(last) = self.data.last_mut() {
+                *last |= 0x80 >> (self.size % 8);
+            }
         }
 
         self.size += 1;

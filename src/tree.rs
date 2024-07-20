@@ -9,11 +9,11 @@ use std::{
 #[derive(Debug, PartialEq, Eq, Serialize, Deserialize)]
 pub struct Tree<T> {
     freq: usize,
-    kind: TreeKind<T>,
+    kind: Kind<T>,
 }
 
 #[derive(Debug, PartialEq, Eq, Serialize, Deserialize)]
-enum TreeKind<T> {
+enum Kind<T> {
     Leaf { token: T },
     Inner { children: Box<[Tree<T>; 2]> },
 }
@@ -42,10 +42,13 @@ impl<T: Hash + Eq + Ord> Tree<T> {
 
         loop {
             match (freqs.pop(), freqs.pop()) {
-                (Some(Reverse(root)), None) => break root,
                 (Some(Reverse(left)), Some(Reverse(right))) => {
                     let parent = Tree::inner(left, right);
                     freqs.push(Reverse(parent));
+                }
+
+                (Some(Reverse(root)), None) => {
+                    break root;
                 }
 
                 _ => unreachable!(),
@@ -55,17 +58,17 @@ impl<T: Hash + Eq + Ord> Tree<T> {
 }
 
 impl<T> Tree<T> {
-    pub fn leaf(token: T, freq: usize) -> Self {
+    fn leaf(token: T, freq: usize) -> Self {
         Self {
             freq,
-            kind: TreeKind::Leaf { token },
+            kind: Kind::Leaf { token },
         }
     }
 
-    pub fn inner(left: Self, right: Self) -> Self {
+    fn inner(left: Self, right: Self) -> Self {
         Self {
             freq: left.freq + right.freq,
-            kind: TreeKind::Inner {
+            kind: Kind::Inner {
                 children: Box::new([left, right]),
             },
         }
@@ -75,11 +78,11 @@ impl<T> Tree<T> {
 impl<T: Hash + Clone + Eq> Tree<T> {
     fn dfs(self, encoding: &mut BitVec, encoder: &mut HashMap<T, BitVec>) {
         match self.kind {
-            TreeKind::Leaf { token } => {
+            Kind::Leaf { token } => {
                 encoder.insert(token, encoding.to_bitvec());
             }
 
-            TreeKind::Inner { children } => {
+            Kind::Inner { children } => {
                 let [left, right] = *children;
 
                 encoding.push(false);
