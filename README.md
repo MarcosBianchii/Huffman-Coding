@@ -6,9 +6,9 @@ The program expects to receive input through `stdin` and returns output through 
 
 ## Use
 ```sh
-# Use `-e` or `--encode` to encode the given bytes
-echo "text" | cargo run -- -e > example.dat
+# Use `-e` or `--encode` to encode the given string
+cat huffman_wiki.txt | cargo r -- -e > encoded.dat
 
 # Use `-d` or `--decode` to decode the given bytes
-cargo run -- -d < example.dat
+cargo r -- -d < encoded.dat
 ```

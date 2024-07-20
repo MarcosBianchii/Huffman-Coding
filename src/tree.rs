@@ -1,21 +1,21 @@
-use crate::bag::Bag;
-use bitvec::prelude::*;
+use crate::{Bag, BitVec};
 use serde::{Deserialize, Serialize};
 use std::{
     cmp::{Ordering, Reverse},
     collections::{BinaryHeap, HashMap},
+    hash::Hash,
 };
 
 #[derive(Debug, PartialEq, Eq, Serialize, Deserialize)]
-pub enum Tree<T> {
-    Leaf {
-        freq: usize,
-        item: T,
-    },
-    Inner {
-        freq: usize,
-        children: Box<[Self; 2]>,
-    },
+pub struct Tree<T> {
+    freq: usize,
+    kind: TreeKind<T>,
+}
+
+#[derive(Debug, PartialEq, Eq, Serialize, Deserialize)]
+enum TreeKind<T> {
+    Leaf { token: T },
+    Inner { children: Box<[Tree<T>; 2]> },
 }
 
 impl<T: Ord> PartialOrd for Tree<T> {
@@ -26,11 +26,11 @@ impl<T: Ord> PartialOrd for Tree<T> {
 
 impl<T: Ord> Ord for Tree<T> {
     fn cmp(&self, other: &Self) -> Ordering {
-        self.freq().cmp(&other.freq())
+        self.freq.cmp(&other.freq)
     }
 }
 
-impl<T: std::hash::Hash + Eq + Ord> Tree<T> {
+impl<T: Hash + Eq + Ord> Tree<T> {
     pub fn new<I>(data: I) -> Tree<T>
     where
         I: IntoIterator<Item = T>,
@@ -55,55 +55,47 @@ impl<T: std::hash::Hash + Eq + Ord> Tree<T> {
 }
 
 impl<T> Tree<T> {
-    pub fn leaf(item: T, freq: usize) -> Self {
-        Self::Leaf { item, freq }
+    pub fn leaf(token: T, freq: usize) -> Self {
+        Self {
+            freq,
+            kind: TreeKind::Leaf { token },
+        }
     }
 
     pub fn inner(left: Self, right: Self) -> Self {
-        Self::Inner {
-            freq: left.freq() + right.freq(),
-            children: Box::new([left, right]),
-        }
-    }
-
-    fn freq(&self) -> usize {
-        match *self {
-            Self::Leaf { freq, .. } | Self::Inner { freq, .. } => freq,
-        }
-    }
-
-    fn dfs<'a, F: FnMut(&'a T, &BitSlice)>(&'a self, encoding: &mut BitVec, f: &mut F) {
-        match self {
-            Self::Leaf { item, .. } => f(item, encoding),
-            Self::Inner { children, .. } => {
-                for (i, child) in children.iter().enumerate() {
-                    encoding.push(i == 1);
-                    child.dfs(encoding, f);
-                    encoding.pop();
-                }
-            }
+        Self {
+            freq: left.freq + right.freq,
+            kind: TreeKind::Inner {
+                children: Box::new([left, right]),
+            },
         }
     }
 }
 
-impl<T: std::hash::Hash + Clone + Eq> Tree<T> {
-    pub fn encoder(&self) -> HashMap<T, BitVec> {
-        let mut table = HashMap::new();
-        let mut f = |item: &T, encoding: &BitSlice| {
-            table.insert(item.clone(), encoding.to_bitvec());
-        };
+impl<T: Hash + Clone + Eq> Tree<T> {
+    fn dfs(self, encoding: &mut BitVec, encoder: &mut HashMap<T, BitVec>) {
+        match self.kind {
+            TreeKind::Leaf { token } => {
+                encoder.insert(token, encoding.to_bitvec());
+            }
 
-        self.dfs(&mut BitVec::new(), &mut f);
-        table
+            TreeKind::Inner { children } => {
+                let [left, right] = *children;
+
+                encoding.push(false);
+                left.dfs(encoding, encoder);
+                encoding.pop();
+
+                encoding.push(true);
+                right.dfs(encoding, encoder);
+                encoding.pop();
+            }
+        }
     }
 
-    pub fn decoder(&self) -> HashMap<BitVec, T> {
+    pub fn encoder(self) -> HashMap<T, BitVec> {
         let mut table = HashMap::new();
-        let mut f = |item: &T, encoding: &BitSlice| {
-            table.insert(encoding.to_bitvec(), item.clone());
-        };
-
-        self.dfs(&mut BitVec::new(), &mut f);
+        self.dfs(&mut BitVec::new(), &mut table);
         table
     }
 }

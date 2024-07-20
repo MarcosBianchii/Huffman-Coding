@@ -1,20 +1,20 @@
-use crate::tree::Tree;
-use bitvec::prelude::*;
+use crate::BitVec;
 use serde::{Deserialize, Serialize};
+use std::collections::HashMap;
 
 #[derive(Serialize, Deserialize)]
 pub struct EncodedData<T> {
-    tree: Tree<T>,
+    decoder: HashMap<BitVec, T>,
     bits: BitVec,
 }
 
 impl<T> EncodedData<T> {
-    pub fn new(tree: Tree<T>, bits: BitVec) -> Self {
-        Self { tree, bits }
+    pub fn new(decoder: HashMap<BitVec, T>, bits: BitVec) -> Self {
+        Self { decoder, bits }
     }
 
-    pub fn destructure(self) -> (Tree<T>, BitVec) {
-        (self.tree, self.bits)
+    pub fn destructure(self) -> (HashMap<BitVec, T>, BitVec) {
+        (self.decoder, self.bits)
     }
 }
 
