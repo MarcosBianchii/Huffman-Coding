@@ -4,7 +4,7 @@ use std::collections::HashMap;
 
 #[derive(Serialize, Deserialize)]
 pub struct EncodedData<T> {
-    decoder: HashMap<BitVec, T>,
+    pub decoder: HashMap<BitVec, T>,
     bits: BitVec,
 }
 

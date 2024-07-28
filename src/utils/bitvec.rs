@@ -1,7 +1,7 @@
 use serde::{Deserialize, Serialize};
 use std::fmt::{self, Debug};
 
-#[derive(Serialize, Deserialize, PartialEq, Eq, Hash, Default)]
+#[derive(Serialize, Deserialize, PartialEq, Eq, Hash, Default, Clone)]
 pub struct BitVec {
     data: Vec<u8>,
     size: usize,
@@ -70,13 +70,6 @@ impl BitVec {
     pub fn extend(&mut self, other: &Self) {
         for bit in other {
             self.push(bit);
-        }
-    }
-
-    pub fn to_bitvec(&self) -> Self {
-        Self {
-            data: self.data.clone(),
-            size: self.size,
         }
     }
 

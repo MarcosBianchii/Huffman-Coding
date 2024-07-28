@@ -30,7 +30,7 @@ impl<T: Ord> Ord for Tree<T> {
     }
 }
 
-impl<T: Hash + Eq + Ord> Tree<T> {
+impl<T: Hash + Ord> Tree<T> {
     pub fn new<I>(data: I) -> Tree<T>
     where
         I: IntoIterator<Item = T>,
@@ -75,11 +75,11 @@ impl<T> Tree<T> {
     }
 }
 
-impl<T: Hash + Clone + Eq> Tree<T> {
+impl<T: Hash + Eq> Tree<T> {
     fn dfs(self, encoding: &mut BitVec, encoder: &mut HashMap<T, BitVec>) {
         match self.kind {
             Kind::Leaf { token } => {
-                encoder.insert(token, encoding.to_bitvec());
+                encoder.insert(token, encoding.clone());
             }
 
             Kind::Inner { children } => {
