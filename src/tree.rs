@@ -1,4 +1,4 @@
-use crate::{Bag, BitVec};
+use crate::{error::HuffErr, Bag, BitVec, Result};
 use serde::{Deserialize, Serialize};
 use std::{
     cmp::{Ordering, Reverse},
@@ -31,7 +31,7 @@ impl<T: Ord> Ord for Tree<T> {
 }
 
 impl<T: Hash + Ord> Tree<T> {
-    pub fn new<I>(data: I) -> Tree<T>
+    pub fn new<I>(data: I) -> Result<Tree<T>>
     where
         I: IntoIterator<Item = T>,
     {
@@ -41,17 +41,15 @@ impl<T: Hash + Ord> Tree<T> {
             .collect();
 
         loop {
-            match (freqs.pop(), freqs.pop()) {
-                (Some(Reverse(left)), Some(Reverse(right))) => {
+            let Reverse(left) = freqs.pop().ok_or(HuffErr::InputIsEmpty)?;
+
+            match freqs.pop() {
+                Some(Reverse(right)) => {
                     let parent = Tree::inner(left, right);
                     freqs.push(Reverse(parent));
                 }
 
-                (Some(Reverse(root)), None) => {
-                    break root;
-                }
-
-                _ => unreachable!(),
+                None => break Ok(left),
             }
         }
     }

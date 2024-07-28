@@ -1,4 +1,4 @@
-use crate::BitVec;
+use crate::{BitVec, HuffErr, Result};
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 
@@ -28,7 +28,7 @@ impl<T> EncodedData<T>
 where
     for<'a> T: Deserialize<'a>,
 {
-    pub fn from_bytes(bytes: &[u8]) -> bincode::Result<Self> {
-        bincode::deserialize(bytes)
+    pub fn from_bytes(bytes: &[u8]) -> Result<Self> {
+        bincode::deserialize(bytes).map_err(|_| HuffErr::InvalidBytes)
     }
 }

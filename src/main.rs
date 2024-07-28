@@ -1,23 +1,22 @@
-use huffman::{utils::SplitNonAlphabetic, EncodedData};
+use huffman::{utils::SplitNonAlphabetic, EncodedData, HuffErr};
 use std::{
     env,
-    error::Error,
     io::{self, Read, Write},
 };
 
-fn main() -> Result<(), Box<dyn Error>> {
-    let opt = env::args().nth(1).ok_or("No option was given")?;
+fn protocol() -> huffman::Result<()> {
+    let opt = env::args().nth(1).ok_or(HuffErr::NoProtocolWasSpecified)?;
 
-    let huff: fn(Vec<u8>) -> Result<_, Box<dyn Error>> = match opt.as_ref() {
+    let huff: fn(Vec<u8>) -> huffman::Result<Vec<u8>> = match opt.as_ref() {
         "-e" | "--encode" => |input| {
-            let encoded_data = huffman::encode(&input);
+            let encoded_data = huffman::encode(&input)?;
             Ok(encoded_data.into_bytes())
         },
 
         "-ew" | "--encode-words" => |input| {
             let text = String::from_utf8(input)?;
             let words: Vec<_> = text.split_non_alphabetic().collect();
-            let encoded_data = huffman::encode(&words);
+            let encoded_data = huffman::encode(&words)?;
             Ok(encoded_data.into_bytes())
         },
 
@@ -31,7 +30,7 @@ fn main() -> Result<(), Box<dyn Error>> {
             Ok(huffman::decode(encoded_data).join("").into_bytes())
         },
 
-        _ => Err("The given option is invalid")?,
+        _ => Err(HuffErr::SpecifiedProtocolIsInvalid)?,
     };
 
     let mut input = Vec::new();
@@ -39,6 +38,16 @@ fn main() -> Result<(), Box<dyn Error>> {
 
     let bytes = huff(input)?;
     io::stdout().write_all(&bytes)?;
+
+    Ok(())
+}
+
+fn main() -> io::Result<()> {
+    if let Err(err) = protocol() {
+        let mut stderr = io::stderr();
+        let msg = err.to_string();
+        return stderr.write_all(msg.as_bytes());
+    }
 
     Ok(())
 }

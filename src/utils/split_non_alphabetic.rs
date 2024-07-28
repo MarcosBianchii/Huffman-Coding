@@ -24,7 +24,7 @@ impl<'a> Iterator for IterSplitNonAlphabetic<'a> {
         let mut r = self.r;
         let mut nexts = (None, None);
 
-        while let Some(ch) = self.chars.next() {
+        for ch in self.chars.by_ref() {
             let size = ch.len_utf8();
 
             if !ch.is_alphabetic() {

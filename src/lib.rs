@@ -1,16 +1,20 @@
 mod encoded_data;
+mod error;
 mod tree;
 pub mod utils;
 
 pub use encoded_data::EncodedData;
+pub use error::HuffErr;
 use std::{collections::HashMap, hash::Hash};
 use tree::Tree;
 use utils::{Bag, BitVec};
 
+pub type Result<T> = std::result::Result<T, HuffErr>;
+
 /// Encodes the given data following Huffman's
 /// algorithm and returns it's encoded data.
-pub fn encode<T: Hash + Ord>(data: &[T]) -> EncodedData<&T> {
-    let tree = Tree::new(data);
+pub fn encode<T: Hash + Ord>(data: &[T]) -> Result<EncodedData<&T>> {
+    let tree = Tree::new(data)?;
     let encoder = tree.encoder();
 
     let bits = data.iter().fold(BitVec::new(), |mut acc, x| {
@@ -24,7 +28,7 @@ pub fn encode<T: Hash + Ord>(data: &[T]) -> EncodedData<&T> {
         .map(|(token, enc)| (enc, token))
         .collect();
 
-    EncodedData::new(decoder, bits)
+    Ok(EncodedData::new(decoder, bits))
 }
 
 /// Decodes the encoded data and returns the original data.
