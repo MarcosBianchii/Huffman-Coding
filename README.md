@@ -1,4 +1,4 @@
-# Huffman Encoding
+# Huffman Coding
 
 This is a simple implementation of a [Huffman Encoder/Decoder](https://en.wikipedia.org/wiki/Huffman_coding)
 
